@@ -239,6 +239,8 @@ class SQLiteDatabaseEngine(DatabaseEngine):
         return self.db.cursor(factory)
 
     def close(self) -> None:
+        if self.is_closed:
+            return
         self.db.close()
         self.is_closed = True
 
