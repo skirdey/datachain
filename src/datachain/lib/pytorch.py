@@ -89,6 +89,7 @@ class PytorchDataset(IterableDataset):
 
     def close(self) -> None:
         if not self.cache:
+            logger.info("destroy cache")
             self._cache.destroy()
 
     def _init_catalog(self, catalog: "Catalog"):

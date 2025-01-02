@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import threading
 from collections.abc import (
     AsyncIterable,
@@ -19,6 +20,8 @@ ASYNC_WORKERS = 20
 InputT = TypeVar("InputT", contravariant=True)  # noqa: PLC0105
 ResultT = TypeVar("ResultT", covariant=True)  # noqa: PLC0105
 T = TypeVar("T")
+
+logger = logging.getLogger(__name__)
 
 
 class AsyncMapper(Generic[InputT, ResultT]):
@@ -132,6 +135,7 @@ class AsyncMapper(Generic[InputT, ResultT]):
             for task in self._tasks:
                 task.cancel()
             await asyncio.wait(self._tasks)
+            logger.info("All tasks cancelled")
 
     def gather_exceptions(self, done_tasks):
         # Check all exceptions to avoid "Task exception was never retrieved" warning

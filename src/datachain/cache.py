@@ -1,3 +1,4 @@
+import logging
 import os
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -14,6 +15,9 @@ from .progress import Tqdm
 if TYPE_CHECKING:
     from datachain.client import Client
     from datachain.lib.file import File
+
+
+logger = logging.getLogger(__name__)
 
 
 def try_scandir(path):
@@ -116,6 +120,7 @@ class DataChainCache:
 
     def destroy(self) -> None:
         # `clear` leaves the prefix directory structure intact.
+        logger.info("destroy cache")
         remove(self.cache_dir)
 
     def get_total_size(self) -> int:
