@@ -8,6 +8,7 @@ import attrs
 from fsspec.callbacks import DEFAULT_CALLBACK, Callback
 from pydantic import BaseModel
 
+from datachain.cache import temporary_cache
 from datachain.dataset import RowDict
 from datachain.lib.convert.flatten import flatten
 from datachain.lib.data_model import DataValue
@@ -299,8 +300,14 @@ class Mapper(UDFBase):
             self._prepare_row_and_id(row, udf_fields, cache, download_cb)
             for row in udf_inputs
         )
+
+        ctx = contextlib.ExitStack()
         if self.prefetch > 0:
-            _cache = self.catalog.cache if cache else None
+            if cache:
+                tmp_dir = self.catalog.cache.tmp_dir
+                _cache = ctx.enter_context(temporary_cache(tmp_dir, prefix="prefetch-"))
+            else:
+                _cache = self.catalog.cache
             prepared_inputs = rows_prefetcher(
                 self.catalog,
                 prepared_inputs,
@@ -309,15 +316,18 @@ class Mapper(UDFBase):
                 download_cb=download_cb,
             )
 
-        with contextlib.closing(prepared_inputs):
-            for id_, *udf_args in prepared_inputs:
-                result_objs = self.process_safe(udf_args)
-                udf_output = self._flatten_row(result_objs)
-                output = [{"sys__id": id_} | dict(zip(self.signal_names, udf_output))]
-                processed_cb.relative_update(1)
-                yield output
+            with ctx:
+                with contextlib.closing(prepared_inputs):
+                    for id_, *udf_args in prepared_inputs:
+                        result_objs = self.process_safe(udf_args)
+                        udf_output = self._flatten_row(result_objs)
+                        output = [
+                            {"sys__id": id_} | dict(zip(self.signal_names, udf_output))
+                        ]
+                        processed_cb.relative_update(1)
+                        yield output
 
-        self.teardown()
+                self.teardown()
 
 
 class BatchMapper(UDFBase):
@@ -381,8 +391,14 @@ class Generator(UDFBase):
         prepared_inputs: abc.Generator[Sequence[Any], None, None] = (
             self._prepare_row(row, udf_fields, cache, download_cb) for row in udf_inputs
         )
+
+        ctx = contextlib.ExitStack()
         if self.prefetch > 0:
-            _cache = self.catalog.cache if cache else None
+            if cache:
+                tmp_dir = self.catalog.cache.tmp_dir
+                _cache = ctx.enter_context(temporary_cache(tmp_dir, prefix="prefetch-"))
+            else:
+                _cache = self.catalog.cache
             prepared_inputs = rows_prefetcher(
                 self.catalog,
                 prepared_inputs,
@@ -391,15 +407,16 @@ class Generator(UDFBase):
                 download_cb=download_cb,
             )
 
-        with contextlib.closing(prepared_inputs):
-            for row in prepared_inputs:
-                result_objs = self.process_safe(row)
-                udf_outputs = (self._flatten_row(row) for row in result_objs)
-                output = (dict(zip(self.signal_names, row)) for row in udf_outputs)
-                processed_cb.relative_update(1)
-                yield output
+        with ctx:
+            with contextlib.closing(prepared_inputs):
+                for row in prepared_inputs:
+                    result_objs = self.process_safe(row)
+                    udf_outputs = (self._flatten_row(row) for row in result_objs)
+                    output = (dict(zip(self.signal_names, row)) for row in udf_outputs)
+                    processed_cb.relative_update(1)
+                    yield output
 
-        self.teardown()
+            self.teardown()
 
 
 class Aggregator(UDFBase):
