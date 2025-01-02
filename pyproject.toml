@@ -131,6 +131,7 @@ namespaces = false
 [tool.setuptools_scm]
 
 [tool.pytest.ini_options]
+log_level = "DEBUG"
 addopts = "-rfEs -m 'not examples' --benchmark-skip"
 markers = [
   "e2e: End-to-end tests",

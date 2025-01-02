@@ -81,7 +81,17 @@ jobs:
           - windows-latest
           - windows-latest
           - windows-latest
-        pyv: ['3.9', '3.10', '3.11', '3.12', '3.9', '3.10', '3.11', '3.12', '3.9', '3.10', '3.11', '3.12']
+          - windows-latest
+          - windows-latest
+          - windows-latest
+          - windows-latest
+          - windows-latest
+          - windows-latest
+          - windows-latest
+          - windows-latest
+          - windows-latest
+          - windows-latest
+        pyv: ['3.12']
 
     steps:
       - name: Check out the repository
