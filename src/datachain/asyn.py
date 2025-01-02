@@ -134,8 +134,11 @@ class AsyncMapper(Generic[InputT, ResultT]):
         if self._tasks:
             for task in self._tasks:
                 task.cancel()
+            logger.info("Cancelling all tasks: %r", self._tasks)
             await asyncio.wait(self._tasks)
-            logger.info("All tasks cancelled")
+            logger.info("All tasks cancelled: %r", self._tasks)
+            pending = asyncio.all_tasks()
+            logger.info("Pending tasks: %r", pending - {asyncio.current_task()})
 
     def gather_exceptions(self, done_tasks):
         # Check all exceptions to avoid "Task exception was never retrieved" warning
