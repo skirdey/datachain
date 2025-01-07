@@ -69,17 +69,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest-8-cores]
-        pyv: ['3.9', '3.10', '3.11', '3.12']
-        include:
-          - os: macos-latest
-            pyv: '3.9'
-          - os: macos-latest
-            pyv: '3.12'
-          - os: windows-latest
-            pyv: '3.9'
-          - os: windows-latest
-            pyv: '3.12'
+        os: [ubuntu-latest-8-cores, ubuntu-latest-8-cores, ubuntu-latest-8-cores, ubuntu-latest-8-cores, ubuntu-latest-8-cores, windows-latest, windows-latest, windows-latest, windows-latest, windows-latest, macos-latest, macos-latest, macos-latest]
+        pyv: ['3.9', '3.9', '3.10', '3.10', '3.11', '3.11', '3.12', '3.12']
 
     steps:
       - name: Check out the repository
@@ -112,7 +103,7 @@ jobs:
         run: echo 'DISABLE_REMOTES_ARG=--disable-remotes=azure,gs' >> $env:GITHUB_ENV
 
       - name: Run tests
-        run: nox -s tests-${{ matrix.pyv }} -- $DISABLE_REMOTES_ARG
+        run: nox -s tests-${{ matrix.pyv }} -- $DISABLE_REMOTES_ARG -p no:sugar -vv --timeout=600 --session-timeout=2100
         shell: bash
 
       - name: Upload coverage report
